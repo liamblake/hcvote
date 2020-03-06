@@ -9,6 +9,7 @@ Coming soon
 
 ## With Google Forms
 Coming soon
+<<<<<<< HEAD
 
 ## Counting Process
 The following outlines the Hare-Clark counting process. Suppose we have some elected position with ```no_vac``` vacancies (e.g. a general committee) and ```no_cand``` candidates for that position. Assume that ```no_vac < no_cand```, otherwise the election is trivial. Each vote orders the candidates in the voter's preferred order, i.e. a preferential vote. Assume that there are ```no_votes``` valid votes.
@@ -50,3 +51,5 @@ for c in 0 to no_cand:
 		
 
 ```
+=======
+>>>>>>> 5e41dbff2613958d21fefb697ebf6ba1f48878a9
