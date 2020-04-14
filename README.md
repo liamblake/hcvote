@@ -24,17 +24,20 @@ quota = (no_votes + 1)/(no_vac + 1)
 3. Any candidate with a number of votes equal to or greater than the quota are declared elected.
 	* If all vacancies have been filled, the election is complete and no further action is required.
 	* If vacancies still remain, and
-		* at least one candidate has more votes than the quota, **go to step 4**?
+		* at least one candidate has more votes than the quota, **go to step 4**,
 		* otherwise, **go to step 5**
 
-4. For each elected candidate with surplus votes 
+4. For each elected candidate with surplus votes, any vote with that candidate as the first preference is redistributed to the second preference at a reduced value, the transfer value
+```
+transfer = /surplus
+```
 
-5. If unelected candidates and vacancies 
+5. If unelected candidates and vacancies still remain, but no elected candidate has more votes than the quota, the candidate with the smallest number of votes is excluded. 
 
 
 
 ### Psuedocode
-The counting process is impelemented in this module according to the following psuedocode
+The counting process is implemented in this module according to the following psuedocode
 ```
 # Calculate the quota
 quota = (no_votes + 1)/(no_vac + 1)

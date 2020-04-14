@@ -1,12 +1,38 @@
-""" Class representing a single position with an aribtrary number of 
+from pandas import DataFrame
+
+""" Exception raised when an invalid vote is passed to a class.
+"""
+class InvalidVote(Exception):
+	pass
+
+
+""" Exception raised when an unexpected error occurs in vote counting
+"""
+class CountingError(Exception):
+	pass
+
+
+""" Class representing a single position with an arbitrary number of 
 
 """
 class Position:
 	
-	def __init__(self, name, no_vac, candidate, opt_pref = False):
+	def __init__(self, name, no_vac, candidate, opt_pref = False, raise_invalid = False):
+		"""
+
+		Arguments are:
+			name: title of position, as string
+			no_vac: the number of vacancies for that position
+
+
+		For example, for a general committee of 10 members, with 15 people running for election
+		Position("General Committee Member", 10)
+
+		"""
 
 		self.name = name
 		self.__opt_pref = opt_pref
+		self.__raise_invalid = raise_invalid
 
 		# Create a dictionary storing first preference vote for each candidate
 		self.__cand_index = {i : c for i, c in enumerate(candidates)}
@@ -23,8 +49,31 @@ class Position:
 
 
 	def add_vote(self, prefs):
-		# If vote is incorrect, 
-		# TODO: Check that vote is valid
+		# TODO: Deal with optional preferential votes
+
+		# Checking for invalid vote
+		if len(prefs) != self.__no_cand:
+			# Vote is invalid
+			if self.__raise_invalid:
+				raise InvalidVote('Preference array passed to add_vote is of invalid length: expected %i, got %i.' % (self.no_cand, len(prefs)))
+			else:
+				return
+
+		# Check each vote individually
+		for i in prefs:
+			# Ensure vote is an integer
+			if not isinstance(i, int):
+				if self.__raise_invalid:
+					raise InvalidVote('Preference array passed to add_vote includes invalid type: expected float.')
+				else:
+					return
+
+			if i >= self.__no_cand:
+				if self.__raise_invalid:
+					raise InvalidVote('Preference array passed to add_vote includes value too large.')
+				else:
+					return
+
 
 		self.__votes.append(prefs)
 
@@ -100,21 +149,25 @@ class Position:
 			# Elect remaining candidates
 			self.__elected
 		else:
-			raise ValueError("Error in counting")
-
-
+			raise CountingError()
 
 	def is_opt_pref(self):
 		return self.__opt_pref
 
-
 	def set_opt_pref(self, n_val):
 		if not isinstance(n_val, bool):
-			raise TypeError
+			raise TypeError('Expected bool type, got %s.' % (type(n_val).__name__))
 
 		self.__opt_pref = n_val
 
+	def is_raise_invalid(self):
+		return self.__raise_invalid
 
+	def set_raise_invalid(self, n_val):
+		if not isinstance(n_val, bool):
+			raise TypeError('Expected bool type, got %s.' % (type(n_val).__name__))
+
+		self.__raise_invalid = n_val
 
 	def get_elected(self):
 		if self.__elect_open:
@@ -124,7 +177,15 @@ class Position:
 		for i in self.__elected yield self.__cand_index[i]
 
 
+def df_to_position(df, name, no_vac):
+	cands = df.columns
 
 
-def csv_to_position(filename):
-	pass
+	output = Position()
+
+
+def csv_to_position(filename, name, no_vac):
+	# Load csv_file
+	votes =[]
+	# Get candidates from headers
+	return df_to_position(votes, name)
