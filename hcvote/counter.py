@@ -66,31 +66,31 @@ class Position:
         self.__elected = []
         self.__elect_open = True
 
+    def __invalid_vote(self, string):
+        if not self.__raise_invalid:
+            return
+        else:
+            raise InvalidVote(string)
+
     def add_vote(self, prefs):
         # TODO: Deal with optional preferential votes
 
         # Checking for invalid vote
         if len(prefs) != self.__no_cand:
             # Vote is invalid
-            if self.__raise_invalid:
-                raise InvalidVote('Preference array passed to add_vote is of invalid length: expected %i, got %i.' % (self.no_cand, len(prefs)))
-            else:
-                return
+            self.__invalid_vote('Preference array passed to add_vote is of invalid length: expected %i, got %i.' % (self.no_cand, len(prefs)))
+            return
 
         # Check each vote individually
         for i in prefs:
             # Ensure vote is an integer
             if not isinstance(i, int):
-                if self.__raise_invalid:
-                    raise InvalidVote('Preference array passed to add_vote includes invalid type: expected float.')
-                else:
-                    return
+                self.__invalid_vote('Preference array passed to add_vote includes invalid type: expected float.')
+                return
 
             if i >= self.__no_cand:
-                if self.__raise_invalid:
-                    raise InvalidVote('Preference array passed to add_vote includes value too large.')
-                else:
-                    return
+                self.__raise_invalid('Preference array passed to add_vote includes value too large.')
+                return
 
         self.__votes.append(prefs)
 
@@ -160,9 +160,11 @@ class Position:
         # Check for remaining vacancies
         if self.__no_vac <= self.__no_cand:
             # Elect remaining candidates
-            self.__elected
+            self.__elected.append()
         else:
             raise CountingError()
+
+        self.__elect_open = False
 
     def is_opt_pref(self):
         return self.__opt_pref
@@ -187,7 +189,8 @@ class Position:
             raise AttributeError('The vote has not been counted for this position yet. Call the count_vote method to do so.')
 
         # Generator of elected candidiates
-        for i in self.__elected yield self.__cand_index[i]
+        return self.__elected  # currently a bit janky
+        # for i in self.__elected yield self.__cand_index[i]
 
 
 def df_to_position(df, name, no_vac, opt_pref=False, raise_invalid=False):
@@ -226,4 +229,4 @@ def csv_to_position(filename, name, no_vac, opt_pref=False, raise_invalid=False)
     """
 
     votes = read_csv(filename)
-    return df_to_position(votes, name, no_vac opt_pref, raise_invalid)
+    return df_to_position(votes, name, no_vac, opt_pref, raise_invalid)
