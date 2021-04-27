@@ -7,31 +7,35 @@ TODO:
     - Google forms module
 """
 
-__all__ = ["InvalidVote", "CountingError", "Position", "df_to_position", "csv_to_position"]
+__all__ = [
+    "InvalidVote",
+    "CountingError",
+    "Position",
+    "df_to_position",
+    "csv_to_position",
+]
 __version__ = "0.1"
 __author__ = "Liam Blake"
 
 
-from pandas import DataFrame, read_csv
+from pandas import read_csv
 
 
 class InvalidVote(Exception):
-    """ Exception raised when an invalid vote is passed to a class.
-    """
+    """Exception raised when an invalid vote is passed to a class."""
 
     pass
 
 
 class CountingError(Exception):
-    """ Exception raised when an unexpected error occurs in vote counting
-    """
+    """Exception raised when an unexpected error occurs in vote counting"""
 
     pass
 
 
 class Position:
-    """ Class representing a single position with an arbitrary number of candidates
-        and vacancies.
+    """Class representing a single position with an arbitrary number of candidates
+    and vacancies.
     """
 
     def __init__(self, name, no_vac, candidates, opt_pref=False, raise_invalid=False):
@@ -78,18 +82,25 @@ class Position:
         # Checking for invalid vote
         if len(prefs) != self.__no_cand:
             # Vote is invalid
-            self.__invalid_vote('Preference array passed to add_vote is of invalid length: expected %i, got %i.' % (self.no_cand, len(prefs)))
+            self.__invalid_vote(
+                "Preference array passed to add_vote is of invalid length: expected %i, got %i."
+                % (self.no_cand, len(prefs))
+            )
             return
 
         # Check each vote individually
         for i in prefs:
             # Ensure vote is an integer
             if not isinstance(i, int):
-                self.__invalid_vote('Preference array passed to add_vote includes invalid type: expected float.')
+                self.__invalid_vote(
+                    "Preference array passed to add_vote includes invalid type: expected float."
+                )
                 return
 
             if i >= self.__no_cand:
-                self.__raise_invalid('Preference array passed to add_vote includes value too large.')
+                self.__raise_invalid(
+                    "Preference array passed to add_vote includes value too large."
+                )
                 return
 
         self.__votes.append(prefs)
@@ -171,7 +182,7 @@ class Position:
 
     def set_opt_pref(self, n_val):
         if not isinstance(n_val, bool):
-            raise TypeError('Expected bool type, got %s.' % (type(n_val).__name__))
+            raise TypeError("Expected bool type, got %s." % (type(n_val).__name__))
 
         self.__opt_pref = n_val
 
@@ -180,13 +191,15 @@ class Position:
 
     def set_raise_invalid(self, n_val):
         if not isinstance(n_val, bool):
-            raise TypeError('Expected bool type, got %s.' % (type(n_val).__name__))
+            raise TypeError("Expected bool type, got %s." % (type(n_val).__name__))
 
         self.__raise_invalid = n_val
 
     def get_elected(self):
         if self.__elect_open:
-            raise AttributeError('The vote has not been counted for this position yet. Call the count_vote method to do so.')
+            raise AttributeError(
+                "The vote has not been counted for this position yet. Call the count_vote method to do so."
+            )
 
         # Generator of elected candidiates
         return self.__elected  # currently a bit janky
@@ -194,7 +207,7 @@ class Position:
 
 
 def df_to_position(df, name, no_vac, opt_pref=False, raise_invalid=False):
-    """ Returns a position from a pandas DataFrame of candidates and votes
+    """Returns a position from a pandas DataFrame of candidates and votes
 
     Arguments
         name: title of position
@@ -217,7 +230,7 @@ def df_to_position(df, name, no_vac, opt_pref=False, raise_invalid=False):
 
 
 def csv_to_position(filename, name, no_vac, opt_pref=False, raise_invalid=False):
-    """ Reads a .csv file containing candidates and preferences.
+    """Reads a .csv file containing candidates and preferences.
 
     Arguments:
         filename: directory of .csv file to be read.
