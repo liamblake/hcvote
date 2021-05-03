@@ -1,4 +1,3 @@
-
 from setuptools import setup
 
 setup(
@@ -7,11 +6,8 @@ setup(
     author="Liam Blake",
     author_email="",
     packages=["hcvote"],
-    install_requires=[
-        "pandas"
-    ],
-    extras_require={"dev": ["black", "isort",
-                            "flake8", "pytest", "pytest-cov"]},
+    install_requires=["pandas==1.2.4"],
+    extras_require={"dev": ["black", "isort", "flake8", "pytest", "pytest-cov"]},
     version="0.1",
     license="GNU",
     description="Implementation of Hare-Clark voting system.",

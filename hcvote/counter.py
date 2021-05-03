@@ -1,24 +1,8 @@
-"""
+from __future__ import annotations
 
-TODO:
-    - Testing
-    - Documentation
-    - Verification module
-    - Google forms module
-"""
+from typing import List
 
-__all__ = [
-    "InvalidVote",
-    "CountingError",
-    "Position",
-    "df_to_position",
-    "csv_to_position",
-]
-__version__ = "0.1"
-__author__ = "Liam Blake"
-
-
-from pandas import read_csv
+from pandas import DataFrame, read_csv
 
 
 class InvalidVote(Exception):
@@ -38,7 +22,14 @@ class Position:
     and vacancies.
     """
 
-    def __init__(self, name, no_vac, candidates, opt_pref=False, raise_invalid=False):
+    def __init__(
+        self,
+        name: str,
+        no_vac: int,
+        candidates: List[str],
+        opt_pref: bool = False,
+        raise_invalid: bool = False,
+    ):
         """
         Constructor of object.
 
@@ -70,13 +61,13 @@ class Position:
         self.__elected = []
         self.__elect_open = True
 
-    def __invalid_vote(self, string):
+    def __invalid_vote(self, str: str):
         if not self.__raise_invalid:
             return
         else:
-            raise InvalidVote(string)
+            raise InvalidVote(str)
 
-    def add_vote(self, prefs):
+    def add_vote(self, prefs: List[int]):
         # TODO: Deal with optional preferential votes
 
         # Checking for invalid vote
@@ -131,9 +122,9 @@ class Position:
                     self.__no_vac -= 1
                     self.__no_cand -= 1
 
-            if no_vac < 0:
+            if self.no_vac < 0:
                 raise ValueError()
-            elif no_vac == 0:
+            elif self.no_vac == 0:
                 # Election complete
                 break
             else:
@@ -153,7 +144,7 @@ class Position:
 
                 # Transfer surplus votes
                 if no_exclude:
-                    for v in votes:
+                    for v in self.votes:
                         try:
                             first_prefs[v[1]] += transfer[v[0]]
                             if v[0] in self.__elected:
@@ -180,7 +171,7 @@ class Position:
     def is_opt_pref(self):
         return self.__opt_pref
 
-    def set_opt_pref(self, n_val):
+    def set_opt_pref(self, n_val: bool):
         if not isinstance(n_val, bool):
             raise TypeError("Expected bool type, got %s." % (type(n_val).__name__))
 
@@ -189,7 +180,7 @@ class Position:
     def is_raise_invalid(self):
         return self.__raise_invalid
 
-    def set_raise_invalid(self, n_val):
+    def set_raise_invalid(self, n_val: bool):
         if not isinstance(n_val, bool):
             raise TypeError("Expected bool type, got %s." % (type(n_val).__name__))
 
@@ -205,41 +196,55 @@ class Position:
         return self.__elected  # currently a bit janky
         # for i in self.__elected yield self.__cand_index[i]
 
+    @classmethod
+    def from_df(
+        cls,
+        df: DataFrame,
+        name: str,
+        no_vac: int,
+        opt_pref: bool = False,
+        raise_invalid: bool = False,
+    ) -> Position:
+        """Returns a position from a pandas DataFrame of candidates and votes
 
-def df_to_position(df, name, no_vac, opt_pref=False, raise_invalid=False):
-    """Returns a position from a pandas DataFrame of candidates and votes
+        Arguments
+            name: title of position
+            no_vac: number of available vacancies in position
+            opt_pref: see Position.__init__ docstring
+            raise_invalid: see Position.__init__ docstring
 
-    Arguments
-        name: title of position
-        no_vac: number of available vacancies in position
-        opt_pref: see Position.__init__ docstring
-        raise_invalid: see Position.__init__ docstring
+        Note that there are strong requirements on the format of the DataFrame
+        to ensure correct behaviour:
+            -
+        """
+        cands = df.columns
+        output = cls(name, len(cands), cands, opt_pref, raise_invalid)
 
-    Note that there are strong requirements on the format of the DataFrame
-    to ensure correct behaviour:
-        -
-    """
-    cands = df.columns
-    output = Position(name, len(cands), cands, opt_pref, raise_invalid)
+        # Parse each vote
+        for index, row in df.iterrows():
+            output.add_vote(row.values)
 
-    # Parse each vote
-    for index, row in df.iterrows():
-        output.add_vote(row.values)
+        return output
 
-    return output
+    @classmethod
+    def from_csv(
+        cls,
+        filename: str,
+        name: str,
+        no_vac: int,
+        opt_pref: bool = False,
+        raise_invalid: bool = False,
+    ) -> Position:
+        """Reads a .csv file containing candidates and preferences.
 
+        Arguments:
+            filename: directory of .csv file to be read.
+            See df_to_position docstring for remaining arguments
 
-def csv_to_position(filename, name, no_vac, opt_pref=False, raise_invalid=False):
-    """Reads a .csv file containing candidates and preferences.
+        Note that there are strong requirements on the format of the .csv file
+        to ensure correct behaviour:
+            -
+        """
 
-    Arguments:
-        filename: directory of .csv file to be read.
-        See df_to_position docstring for remaining arguments
-
-    Note that there are strong requirements on the format of the .csv file
-    to ensure correct behaviour:
-        -
-    """
-
-    votes = read_csv(filename)
-    return df_to_position(votes, name, no_vac, opt_pref, raise_invalid)
+        votes = read_csv(filename)
+        return cls.from_df(votes, name, no_vac, opt_pref, raise_invalid)
