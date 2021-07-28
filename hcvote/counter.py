@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from math import ceil
 from typing import List
 
 from pandas import DataFrame, read_csv
@@ -89,12 +90,24 @@ class Position:
                 return
 
             if i >= self.__no_cand:
-                self.__raise_invalid(
+                self.__invalid_vote(
                     "Preference array passed to add_vote includes value too large."
                 )
                 return
 
         self.__votes.append(prefs)
+
+    def add_votes(self, votes: List[List[int]]):
+        for prefs in votes:
+            self.add_vote(prefs)
+
+    @property
+    def n_votes(self) -> int:
+        return len(self.__votes)
+
+    @property
+    def quota(self) -> float:
+        return ceil((len(self.__votes) + 1) / (self.__no_vac + 1))
 
     def count_vote(self):
         if not self.__elect_open:
@@ -108,7 +121,7 @@ class Position:
         first_prefs = [0] * self.__no_cand
 
         # Calculate the quote
-        quota = (len(self.__votes) + 1) / (self.__no_vac + 1)
+        quota = self.quota
 
         while self.__no_cand < self.__no_vac:
             # Count first preference votes
@@ -156,7 +169,7 @@ class Position:
 
                 else:
                     exclude = first_prefs.index(min(first_prefs))  # GET INDEX OF MIN
-                    for v in votes:
+                    for v in self.votes:
                         v.remove(exclude)
 
         # Check for remaining vacancies
@@ -168,19 +181,23 @@ class Position:
 
         self.__elect_open = False
 
-    def is_opt_pref(self):
+    @property
+    def opt_pref(self) -> bool:
         return self.__opt_pref
 
-    def set_opt_pref(self, n_val: bool):
+    @opt_pref.setter
+    def opt_pref(self, n_val: bool):
         if not isinstance(n_val, bool):
             raise TypeError("Expected bool type, got %s." % (type(n_val).__name__))
 
         self.__opt_pref = n_val
 
-    def is_raise_invalid(self):
+    @property
+    def raise_invalid(self) -> bool:
         return self.__raise_invalid
 
-    def set_raise_invalid(self, n_val: bool):
+    @raise_invalid.setter
+    def raise_invalid(self, n_val: bool):
         if not isinstance(n_val, bool):
             raise TypeError("Expected bool type, got %s." % (type(n_val).__name__))
 
