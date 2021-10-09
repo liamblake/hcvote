@@ -8,8 +8,8 @@ setup(
     packages=["hcvote"],
     install_requires=["pandas==1.2.4"],
     extras_require={
-        "dev": ["black", "isort", "flake8"],
-        "test": ["pytest", "pytest-cov"],
+        "dev": ["black==21.9b0", "isort==5.9.3", "flake8==3.9.2"],
+        "test": ["pytest==6.2.5", "pytest-cov==3.0.0"],
     },
     version="0.1",
     license="GNU",

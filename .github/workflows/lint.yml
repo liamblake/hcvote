@@ -1,4 +1,4 @@
-name: Unit tests
+name: Code style checks
 
 on:
   push:
@@ -22,11 +22,13 @@ jobs:
       - name: Install package and dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e .[test]
+          python -m pip install -e .[dev]
 
-      - name: Run unit tests
-        run: |
-          pytest --cov=hcvote --cov-report=xml
+      - name: Lint with flake8
+        run: flake8 hcvote
 
-      - name: Upload coverage report to codecov.io
-        uses: codecov/codecov-action@v2
+      - name: Check style with black
+        run: black hcvote --check
+
+      - name: Check imports with isort
+        run: isort hcvote --check-only
