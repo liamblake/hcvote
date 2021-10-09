@@ -203,15 +203,14 @@ class Position:
 
         self.__raise_invalid = n_val
 
-    def get_elected(self):
+    @property
+    def elected(self) -> List[str]:
         if self.__elect_open:
             raise AttributeError(
                 "The vote has not been counted for this position yet. Call the count_vote method to do so."
             )
 
-        # Generator of elected candidiates
-        return self.__elected  # currently a bit janky
-        # for i in self.__elected yield self.__cand_index[i]
+        return self.__elected
 
     @classmethod
     def from_df(
