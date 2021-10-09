@@ -5,27 +5,23 @@ from hcvote import Position
 
 @pytest.fixture(scope="class")
 def position():
-    p = Position("Position", 3, ["Platypus", "Wombat", "Kangaroo", "Koala"])
+    p = Position(3, ["Platypus", "Wombat", "Kangaroo", "Koala"])
     yield p
 
 
 class TestCounterSimple:
-    """Follows the Wikipedia example:
+    """Modified from the Wikipedia example:
     https://en.wikipedia.org/wiki/Hare%E2%80%93Clark_electoral_system#Counting_method_with_example
     """
 
     @pytest.fixture
     def votes(self):
-        # 10000 votes in total
+        # 3000 votes in total
         votes = (
             # 1000 first preference votes for Platypus with Wombat as second
-            [[0, 1, 2, 3] for _ in range(1000)]
+            [["Platypus", "Wombat", "Kangaroo", "Koala"] for _ in range(1000)]
             # 2000 first preference votes for Platypus without Wombat as second
-            + [[0, 2, 1, 3] for _ in range(2000)]
-            # 7000 other votes
-            + [[3, 2, 0, 1] for _ in range(7000)]
-            # 500 invalid votes
-            + [[4, 5, 6, 7] for _ in range(500)]
+            + [["Platypus", "Kangaroo", "Wombat", "Koala"] for _ in range(2000)]
         )
 
         yield votes
@@ -84,7 +80,7 @@ class TestSpecialCountCases:
         THEN: All the candidates are elected.
         """
         candidates = ["Koala", "Kangaroo"]
-        p = Position("An Unpopular Position", no_vac=5, candidates=candidates)
+        p = Position(n_vac=5, candidates=candidates)
         p.add_votes([[0, 1], [1, 0]])
 
         p.count_vote()

@@ -1,80 +1,117 @@
 from __future__ import annotations
 
 from math import ceil
-from typing import List
+from typing import List, Union
 
 from pandas import DataFrame, read_csv
-
-
-class InvalidVote(Exception):
-    """Exception raised when an invalid vote is passed to a class."""
-
-    pass
-
-
-class CountingError(Exception):
-    """Exception raised when an unexpected error occurs in vote counting"""
-
-    pass
 
 
 class Position:
     """Class representing a single position with an arbitrary number of candidates
     and vacancies.
+
+    Args:
+        no_vac: the number of vacancies for that position.
+        candidates: a list of candidate names.
+        opt_pref: option for vote to be optional preferential. If True, incomplete votes are permitted.
+                    If False, incomplete votes are treated as invalid.
+        raise_invalid: option to raise an exception if an invalid vote is passed. If False, the invalid
+                    vote is ignored.
+
+    For example, for a general committee of 10 members, with 15 people running for election;
+    >>> Position("General Committee Member", 10)
     """
 
     def __init__(
         self,
-        name: str,
-        no_vac: int,
+        n_vac: int,
         candidates: List[str],
         opt_pref: bool = False,
         raise_invalid: bool = False,
     ):
-        """
-        Constructor of object.
+        self._opt_pref = opt_pref
+        self._raise_invalid = raise_invalid
+        self._candidates = candidates
 
-        Arguments are:
-            name: title of position, as string
-            no_vac: the number of vacancies for that position
-            candidates: a list of candidate names, with order providing each a unique index
-            opt_pref: option for vote to be optional preferential. If True, incomplete votes are permitted.
-                      If False, incomplete votes are treated as invalid.
-            raise_invalid: option to raise an exception if an invalid vote is passed. If False, the invalid
-                      vote is ignored.
+        self._votes = []
 
-        For example, for a general committee of 10 members, with 15 people running for election
-        Position("General Committee Member", 10)
-        """
+        self._n_vac = n_vac
 
-        self.name = name
-        self.__opt_pref = opt_pref
-        self.__raise_invalid = raise_invalid
-        self.__candidates = candidates
+        self._elected = []
+        self._counted = False
 
-        # Create a dictionary storing first preference vote for each candidate
-        self.__votes = []
-        self.__first_prefs = {i: 0 for i in self.__candidates}
+    #
+    # Properties enforcing attribute access
+    #
 
-        self.__no_vac = no_vac
-        self.__no_cand = len(candidates)
+    @property
+    def candidates(self) -> List[str]:
+        return self._candidates
 
-        self.__elected = []
-        self.__elect_open = True
+    @property
+    def votes(self) -> List[List[str]]:
+        return self._votes
 
-    def __invalid_vote(self, str: str):
-        if not self.__raise_invalid:
-            return
-        else:
-            raise InvalidVote(str)
+    @property
+    def n_votes(self) -> int:
+        return len(self._votes)
 
-    def add_vote(self, prefs: List[int]):
+    @property
+    def n_candidates(self) -> int:
+        return len(self._candidates)
+
+    @property
+    def quota(self) -> float:
+        """Calculate the quota of votes required for election"""
+        return ceil((len(self._votes) + 1) / (self._n_vac + 1))
+
+    @property
+    def opt_pref(self) -> bool:
+        return self._opt_pref
+
+    @opt_pref.setter
+    def opt_pref(self, val: bool):
+        if not isinstance(val, bool):
+            raise TypeError(f"Expected bool, got {type(val)}")
+
+        self._opt_pref = val
+
+    @property
+    def raise_invalid(self) -> bool:
+        return self._raise_invalid
+
+    @raise_invalid.setter
+    def raise_invalid(self, val: bool):
+        if not isinstance(val, bool):
+            raise TypeError(f"Expected bool, got {type(val)}")
+
+        self._raise_invalid = val
+
+    @property
+    def elected(self) -> List[str]:
+        if self._counted:
+            raise AttributeError(
+                "The vote has not been counted for this position yet. Call the count_vote method first."
+            )
+
+        return self._elected
+
+    #
+    # Methods for adding and validating votes
+    #
+
+    def _invalid_vote(self, error_str: str):
+        """Only raise a ValueError is raise_invalid is specified."""
+        if self._raise_invalid:
+            raise ValueError(str)
+
+    def add_vote(self, prefs: Union[List[int], List[str]]):
         # TODO: Deal with optional preferential votes
 
         # Checking for invalid vote
-        if len(prefs) != self.__no_cand:
+        if len(prefs) != self.n_candidates:
             # Vote is invalid
-            self.__invalid_vote(
+            self._invalid_vote(
                 "Preference array passed to add_vote is of invalid length: expected %i, got %i."
                 % (self.no_cand, len(prefs))
             )
@@ -84,13 +121,13 @@ class Position:
         for i in prefs:
             # Ensure vote is an integer
             if not isinstance(i, int):
-                self.__invalid_vote(
-                    "Preference array passed to add_vote includes invalid type: expected float."
+                self._invalid_vote(
+                    f"Preference array passed to add_vote includes invalid type: expected int or str but found {type(i)}."
                 )
                 return
 
-            if i >= self.__no_cand:
-                self.__invalid_vote(
+            if i >= self.no_cand:
+                self._invalid_vote(
                     "Preference array passed to add_vote includes value too large."
                 )
                 return
@@ -101,13 +138,9 @@ class Position:
         for prefs in votes:
             self.add_vote(prefs)
 
-    @property
-    def n_votes(self) -> int:
-        return len(self.__votes)
-
-    @property
-    def quota(self) -> float:
-        return ceil((len(self.__votes) + 1) / (self.__no_vac + 1))
+    #
+    # Methods for counting votes
+    #
 
     def _count_loop(
         self,
@@ -115,26 +148,26 @@ class Position:
         quota: float,
     ):
         # Count first preference votes
-        for v in self.__votes:
+        for v in self._votes:
             first_prefs[v[0]] += 1
 
         # Check for election
-        for c in range(len(self.__no_cand)):
+        for c in range(len(self._n_cand)):
             if first_prefs[c] >= quota:
-                self.__elected.append(c)
-                self.__no_vac -= 1
-                self.__no_cand -= 1
+                self._elected.append(c)
+                self.n_vac -= 1
+                self.n_candidates -= 1
 
         if self.no_vac < 0:
             raise ValueError()
-        elif self.no_vac == 0:
+        elif self.n_vac == 0:
             # Election complete
             return
         else:
 
             # Calculate transfer values
             no_exclude = False
-            transfer = [0] * self.__no_cand
+            transfer = [0] * self.n_candidates
 
             for e in self.__elected:
                 surplus = first_prefs[e] - quota
@@ -150,7 +183,7 @@ class Position:
                 for v in self.votes:
                     try:
                         first_prefs[v[1]] += transfer[v[0]]
-                        if v[0] in self.__elected:
+                        if v[0] in self._elected:
                             v.remove[0]
 
                     except IndexError:
@@ -165,62 +198,35 @@ class Position:
         return first_prefs
 
     def count_vote(self):
-        if not self.__elect_open:
+        if self._counted:
             raise RuntimeError("Election has already been counted")
             return
 
-        if len(self.__votes) == 0:
+        if self.n_votes == 0:
             raise ValueError("No votes have been added, so count cannot be performed.")
 
         # If there are less candidates than positions, all are elected by default
-        if self.__no_cand < self.__no_vac:
-            self.__elected = self.__cand
+        if self.n_candidates < self.n_vac:
+            self._elected = self._cand
 
         # Vote backup in case count fails
-        self.__vote_bku = self.__votes.copy()
+        self._vote_bku = self._votes.copy()
 
         # Number of first preference votes for each candidate
-        first_prefs = [0] * self.__no_cand
+        first_prefs = [0] * self.n_candidates
 
         # Calculate the quote
         quota = self.quota
 
         # Iterate until all positions are
-        while self.__no_cand < self.__no_vac:
+        while self._n_candidates < self._n_vac:
             self._count_loop(first_prefs, quota)
 
-        self.__elect_open = False
+        self._counted = True
 
-    @property
-    def opt_pref(self) -> bool:
-        return self.__opt_pref
-
-    @opt_pref.setter
-    def opt_pref(self, n_val: bool):
-        if not isinstance(n_val, bool):
-            raise TypeError("Expected bool type, got %s." % (type(n_val).__name__))
-
-        self.__opt_pref = n_val
-
-    @property
-    def raise_invalid(self) -> bool:
-        return self.__raise_invalid
-
-    @raise_invalid.setter
-    def raise_invalid(self, n_val: bool):
-        if not isinstance(n_val, bool):
-            raise TypeError("Expected bool type, got %s." % (type(n_val).__name__))
-
-        self.__raise_invalid = n_val
-
-    @property
-    def elected(self) -> List[str]:
-        if self.__elect_open:
-            raise AttributeError(
-                "The vote has not been counted for this position yet. Call the count_vote method to do so."
-            )
-
-        return self.__elected
+    #
+    # Constructors from votes in other data formats.
+    #
 
     @classmethod
     def from_df(

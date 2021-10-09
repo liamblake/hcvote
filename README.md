@@ -34,8 +34,8 @@ from hcvote import Position
 # The names of the candidates
 names = ["Platypus", "Wombat", "Kangaroo", "Koala"]
 
-# Create a position called "General Committee" with 2 available places
-p = Position("General Committee", no_vac=2, candidates=names)
+# Create a position with 2 available places
+p = Position(no_vac=2, candidates=names)
 ```
 
 Votes can be added via the `add_votes` method, which accepts a list of lists, where each sublist corresponds to a vote. Each vote is an ordered list of either the candidate names or corresponding (one-based) indices matching the order originally passed to `candidates` when constructing the `Position`;
