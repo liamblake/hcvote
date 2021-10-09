@@ -47,8 +47,8 @@ votes = []
 votes[0] = ["Wombat", "Platypus", "Koala", "Wombat"]
 
 # Alternatively, (one-based) indices can be used.
-# This vote has Koala as the first prefernece, Wombat as the second, etc.
-votes[1] = [[4, 2, 1, 3]]
+# This vote has Koala as the first preference, Wombat as the second, etc.
+votes[1] = [4, 2, 1, 3]
 
 # Add the votes to the Position
 p.add_votes(votes)
@@ -62,7 +62,7 @@ p.count_vote()
 
 The elected candidates are then available from the `elected` property:
 
-```
+```python
 p.elected
 ```
 
