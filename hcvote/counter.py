@@ -50,11 +50,11 @@ class Position:
         self.name = name
         self.__opt_pref = opt_pref
         self.__raise_invalid = raise_invalid
+        self.__candidates = candidates
 
         # Create a dictionary storing first preference vote for each candidate
-        self.__cand_index = {i: c for i, c in enumerate(candidates)}
         self.__votes = []
-        self.__first_prefs = {i: 0 for i in range(len(candidates))}
+        self.__first_prefs = {i: 0 for i in self.__candidates}
 
         self.__no_vac = no_vac
         self.__no_cand = len(candidates)
@@ -109,10 +109,72 @@ class Position:
     def quota(self) -> float:
         return ceil((len(self.__votes) + 1) / (self.__no_vac + 1))
 
+    def _count_loop(
+        self,
+        first_prefs,
+        quota: float,
+    ):
+        # Count first preference votes
+        for v in self.__votes:
+            first_prefs[v[0]] += 1
+
+        # Check for election
+        for c in range(len(self.__no_cand)):
+            if first_prefs[c] >= quota:
+                self.__elected.append(c)
+                self.__no_vac -= 1
+                self.__no_cand -= 1
+
+        if self.no_vac < 0:
+            raise ValueError()
+        elif self.no_vac == 0:
+            # Election complete
+            return
+        else:
+
+            # Calculate transfer values
+            no_exclude = False
+            transfer = [0] * self.__no_cand
+
+            for e in self.__elected:
+                surplus = first_prefs[e] - quota
+                if surplus > 0:
+                    no_exclude = True
+                    transfer[e] = surplus / first_prefs[e]
+
+                # Remove from consideration
+                first_prefs.remove(e)
+
+            # Transfer surplus votes
+            if no_exclude:
+                for v in self.votes:
+                    try:
+                        first_prefs[v[1]] += transfer[v[0]]
+                        if v[0] in self.__elected:
+                            v.remove[0]
+
+                    except IndexError:
+                        # Second preference is already elected candidate
+                        pass
+
+            else:
+                exclude = first_prefs.index(min(first_prefs))  # GET INDEX OF MIN
+                for v in self.votes:
+                    v.remove(exclude)
+
+        return first_prefs
+
     def count_vote(self):
         if not self.__elect_open:
-            print("Election has already been counted")
+            raise RuntimeError("Election has already been counted")
             return
+
+        if len(self.__votes) == 0:
+            raise ValueError("No votes have been added, so count cannot be performed.")
+
+        # If there are less candidates than positions, all are elected by default
+        if self.__no_cand < self.__no_vac:
+            self.__elected = self.__cand
 
         # Vote backup in case count fails
         self.__vote_bku = self.__votes.copy()
@@ -123,61 +185,9 @@ class Position:
         # Calculate the quote
         quota = self.quota
 
+        # Iterate until all positions are
         while self.__no_cand < self.__no_vac:
-            # Count first preference votes
-            for v in self.__votes:
-                first_prefs[v[0]] += 1
-
-            # Check for election
-            for c in range(len(self.__no_cand)):
-                if first_prefs[c] >= quota:
-                    self.__elected.append(c)
-                    self.__no_vac -= 1
-                    self.__no_cand -= 1
-
-            if self.no_vac < 0:
-                raise ValueError()
-            elif self.no_vac == 0:
-                # Election complete
-                break
-            else:
-
-                # Calculate transfer values
-                no_exclude = False
-                transfer = [0] * self.__no_cand
-
-                for e in self.__elected:
-                    surplus = first_prefs[e] - quota
-                    if surplus > 0:
-                        no_exclude = True
-                        transfer[e] = surplus / first_prefs[e]
-
-                    # Remove from consideration
-                    first_prefs.remove(e)
-
-                # Transfer surplus votes
-                if no_exclude:
-                    for v in self.votes:
-                        try:
-                            first_prefs[v[1]] += transfer[v[0]]
-                            if v[0] in self.__elected:
-                                v.remove[0]
-
-                        except IndexError:
-                            # Second preference is already elected candidate
-                            pass
-
-                else:
-                    exclude = first_prefs.index(min(first_prefs))  # GET INDEX OF MIN
-                    for v in self.votes:
-                        v.remove(exclude)
-
-        # Check for remaining vacancies
-        if self.__no_vac <= self.__no_cand:
-            # Elect remaining candidates
-            self.__elected.append()
-        else:
-            raise CountingError()
+            self._count_loop(first_prefs, quota)
 
         self.__elect_open = False
 
