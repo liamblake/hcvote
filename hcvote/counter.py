@@ -45,6 +45,10 @@ class Position:
     #
 
     @property
+    def n_vac(self) -> int:
+        return self._n_vac
+
+    @property
     def candidates(self) -> List[str]:
         return self._candidates
 
@@ -89,7 +93,7 @@ class Position:
 
     @property
     def elected(self) -> List[str]:
-        if self._counted:
+        if not self._counted:
             raise AttributeError(
                 "The vote has not been counted for this position yet. Call the count_vote method first."
             )
@@ -117,21 +121,23 @@ class Position:
             return
 
         # Check each vote individually
-        for i in prefs:
-            # Ensure vote is an integer
-            if not isinstance(i, int):
+        for i, val in enumerate(prefs):
+            if isinstance(val, int):
+                val = prefs[i] = self._candidates[val - 1]
+            # Vote is invalid if not a string or integer
+            elif not isinstance(val, str):
                 self._invalid_vote(
-                    f"Preference array passed to add_vote includes invalid type: expected int or str but found {type(i)}."
+                    f"Preference array passed to add_vote includes invalid type: expected int or str but found {type(val)}."
                 )
                 return
 
-            if i >= self.no_cand:
+            if val not in self.candidates:
                 self._invalid_vote(
-                    "Preference array passed to add_vote includes value too large."
+                    f"Preference array passed to add_vote includes a name who is not a candidate, found {val}."
                 )
                 return
 
-        self.__votes.append(prefs)
+        self._votes.append(prefs)
 
     def add_votes(self, votes: List[List[int]]):
         for prefs in votes:
@@ -160,7 +166,9 @@ class Position:
 
         # If there are less candidates than positions, all are elected by default
         if self.n_candidates < self.n_vac:
-            self._elected = self._cand
+            self._elected = self._candidates
+            self._counted = True
+            return
 
         remaining = self.candidates
 
@@ -191,7 +199,7 @@ class Position:
                     # second preference, at a reduced value according to the transfer
                     # value.
                     first_prefs = self._distribute_and_remove(
-                        first_prefs=first_prefs,
+                        count=first_prefs,
                         cand=cand,
                         transfer_value=transfer_value,
                     )
@@ -205,7 +213,7 @@ class Position:
                 exclude_cand = min(first_prefs, key=first_prefs.get)
                 # Their votes are redistributed to second preferences
                 first_prefs = self._distribute_and_remove(
-                    first_prefs=first_prefs, cand=exclude_cand, transfer_value=1
+                    count=first_prefs, cand=exclude_cand, transfer_value=1
                 )
 
     #
