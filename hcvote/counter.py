@@ -208,6 +208,12 @@ class Position:
             if len(self._elected) == self._n_vac:
                 self._counted = True
                 return
+            elif len(remaining) <= self._n_vac - len(self._elected):
+                # Fill the remaining positions
+                # TODO: This should not happen in practice
+                self._elected.extend(remaining)
+                self._counted = True
+                return
             elif not elected_this_loop:
                 # If no one was elected this loop, then exclude the candidate with the least votes
                 exclude_cand = min(first_prefs, key=first_prefs.get)
@@ -215,6 +221,7 @@ class Position:
                 first_prefs = self._distribute_and_remove(
                     count=first_prefs, cand=exclude_cand, transfer_value=1
                 )
+                remaining.remove(exclude_cand)
 
     #
     # Constructors from votes in other data formats.
