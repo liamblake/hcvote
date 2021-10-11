@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from math import ceil
-from typing import List, Union
+from typing import Dict, List, Union
 
 from pandas import DataFrame, read_csv
 
@@ -112,8 +112,7 @@ class Position:
         if len(prefs) != self.n_candidates:
             # Vote is invalid
             self._invalid_vote(
-                "Preference array passed to add_vote is of invalid length: expected %i, got %i."
-                % (self.no_cand, len(prefs))
+                f"Preference array passed to add_vote is of invalid length: expected {self.n_candidates}, got {len(prefs)}."
             )
             return
 
@@ -142,65 +141,19 @@ class Position:
     # Methods for counting votes
     #
 
-    def _count_loop(
-        self,
-        first_prefs,
-        quota: float,
-    ):
-        # Count first preference votes
+    def _distribute_and_remove(
+        self, count: Dict[str, int], cand: str, transfer_value: float
+    ) -> Dict[str, int]:
         for v in self._votes:
-            first_prefs[v[0]] += 1
+            if v[0] == cand:
+                count[v[1]] += transfer_value
 
-        # Check for election
-        for c in range(len(self._n_cand)):
-            if first_prefs[c] >= quota:
-                self._elected.append(c)
-                self.n_vac -= 1
-                self.n_candidates -= 1
-
-        if self.no_vac < 0:
-            raise ValueError()
-        elif self.n_vac == 0:
-            # Election complete
-            return
-        else:
-
-            # Calculate transfer values
-            no_exclude = False
-            transfer = [0] * self.n_candidates
-
-            for e in self.__elected:
-                surplus = first_prefs[e] - quota
-                if surplus > 0:
-                    no_exclude = True
-                    transfer[e] = surplus / first_prefs[e]
-
-                # Remove from consideration
-                first_prefs.remove(e)
-
-            # Transfer surplus votes
-            if no_exclude:
-                for v in self.votes:
-                    try:
-                        first_prefs[v[1]] += transfer[v[0]]
-                        if v[0] in self._elected:
-                            v.remove[0]
-
-                    except IndexError:
-                        # Second preference is already elected candidate
-                        pass
-
-            else:
-                exclude = first_prefs.index(min(first_prefs))  # GET INDEX OF MIN
-                for v in self.votes:
-                    v.remove(exclude)
-
-        return first_prefs
+        del count[cand]
+        return count
 
     def count_vote(self):
         if self._counted:
             raise RuntimeError("Election has already been counted")
-            return
 
         if self.n_votes == 0:
             raise ValueError("No votes have been added, so count cannot be performed.")
@@ -209,20 +162,51 @@ class Position:
         if self.n_candidates < self.n_vac:
             self._elected = self._cand
 
-        # Vote backup in case count fails
-        self._vote_bku = self._votes.copy()
+        remaining = self.candidates
 
-        # Number of first preference votes for each candidate
-        first_prefs = [0] * self.n_candidates
+        # Count the initial number of first preference votes
+        first_prefs = {cand: 0 for cand in self._candidates}
+        for v in self._votes:
+            first_prefs[v[0]] += 1
 
-        # Calculate the quote
-        quota = self.quota
+        # Iterate until all positions are filled
+        # The break condition is manually checked after electing candidates
+        # Sometimes you just wish you could use a do while loop :(
+        while True:
+            elected_this_loop = False
 
-        # Iterate until all positions are
-        while self._n_candidates < self._n_vac:
-            self._count_loop(first_prefs, quota)
+            # Elect any candidates with more first preference votes than the quota
+            for cand in remaining:
+                cand_first_prefs = first_prefs[cand]
+                if cand_first_prefs > self.quota:
+                    self._elected.append(cand)
+                    remaining.remove(cand)
+                    elected_this_loop = True
 
-        self._counted = True
+                    # Transfer the votes of the elected candidate
+                    transfer_value = (cand_first_prefs - self.quota) / cand_first_prefs
+
+                    # For every vote with the elected candidate as the first
+                    # preference, their first preference votes are distributed to the
+                    # second preference, at a reduced value according to the transfer
+                    # value.
+                    first_prefs = self._distribute_and_remove(
+                        first_prefs=first_prefs,
+                        cand=cand,
+                        transfer_value=transfer_value,
+                    )
+
+            # Check if all positions have been filled
+            if len(self._elected) == self._n_vac:
+                self._counted = True
+                return
+            elif not elected_this_loop:
+                # If no one was elected this loop, then exclude the candidate with the least votes
+                exclude_cand = min(first_prefs, key=first_prefs.get)
+                # Their votes are redistributed to second preferences
+                first_prefs = self._distribute_and_remove(
+                    first_prefs=first_prefs, cand=exclude_cand, transfer_value=1
+                )
 
     #
     # Constructors from votes in other data formats.
