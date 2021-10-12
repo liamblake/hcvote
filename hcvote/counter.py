@@ -4,8 +4,6 @@ import csv
 from math import ceil
 from typing import Dict, List, Union
 
-from pandas import DataFrame, read_csv
-
 
 class Position:
     """Class representing a single position with an arbitrary number of candidates
@@ -241,36 +239,6 @@ class Position:
     #
     # Constructors from votes in other data formats.
     #
-
-    @classmethod
-    def from_df(
-        cls,
-        df: DataFrame,
-        name: str,
-        no_vac: int,
-        opt_pref: bool = False,
-        raise_invalid: bool = False,
-    ) -> Position:
-        """Returns a position from a pandas DataFrame of candidates and votes
-
-        Arguments
-            name: title of position
-            no_vac: number of available vacancies in position
-            opt_pref: see Position.__init__ docstring
-            raise_invalid: see Position.__init__ docstring
-
-        Note that there are strong requirements on the format of the DataFrame
-        to ensure correct behaviour:
-            -
-        """
-        cands = df.columns
-        output = cls(name, len(cands), cands, opt_pref, raise_invalid)
-
-        # Parse each vote
-        for index, row in df.iterrows():
-            output.add_vote(row.values)
-
-        return output
 
     @classmethod
     def from_csv(
