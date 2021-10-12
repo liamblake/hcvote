@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import csv
 from math import ceil
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
 
 class Position:
@@ -163,25 +163,44 @@ class Position:
         del count[cand]
         return count
 
-    def count_vote(self):
+    def count_vote(self, exclude_cands: Optional[List[str]] = None):
+        """Perform the count, using all votes added to the class via the get_vote(s) methods.
+
+        Args:
+            exclude_cands: Any candidates to immediately remove from consideration. Their votes are redistributed prior to starting the counting loop. This is useful if counting for multiple positions with shared candidates, but each candidate can only be elected to one position.
+
+        Raises:
+            RuntimeError: If this method has already been called before.
+            ValueError: If no votes have been added to the class, so no count can happen.
+
+        """
         if self._counted:
             raise RuntimeError("Election has already been counted")
 
         if self.n_votes == 0:
             raise ValueError("No votes have been added, so count cannot be performed.")
 
+        if exclude_cands is None:
+            exclude_cands = []
+
+        # Count the initial number of first preference votes
+        first_prefs: Dict[str, float] = {cand: 0 for cand in self._candidates}
+        for v in self._votes:
+            first_prefs[v[0]] += 1
+        remaining = self._candidates
+
+        # Exclude any specified candidates and redistribute votes
+        for cand in exclude_cands:
+            self._distribute_and_remove(
+                count=first_prefs, cand=cand, remaining=remaining, transfer_value=1
+            )
+            remaining.remove(cand)
+
         # If there are less candidates than positions, all are elected by default
-        if self.n_candidates < self.n_vac:
+        if len(remaining) < self.n_vac:
             self._elected = self._candidates
             self._counted = True
             return
-
-        remaining = self._candidates
-
-        # Count the initial number of first preference votes
-        first_prefs = {cand: 0 for cand in self._candidates}
-        for v in self._votes:
-            first_prefs[v[0]] += 1
 
         # Iterate until all positions are filled
         # The break condition is manually checked after electing candidates
@@ -227,15 +246,16 @@ class Position:
 
             elif not elected_this_loop:
                 # If no one was elected this loop, then exclude the candidate with the least votes
-                exclude_cand = min(first_prefs, key=first_prefs.get)
+                # TODO(typing): SupportsLessThan???
+                excluded = min(first_prefs, key=first_prefs.get)  # type: ignore
                 # Their votes are redistributed to second preferences
                 first_prefs = self._distribute_and_remove(
                     count=first_prefs,
-                    cand=exclude_cand,
+                    cand=excluded,
                     remaining=remaining,
                     transfer_value=1,
                 )
-                remaining.remove(exclude_cand)
+                remaining.remove(excluded)
 
     #
     # Constructors from votes in other data formats.
@@ -247,18 +267,23 @@ class Position:
         filename: str,
         n_vac: int,
         candidates: List[str],
+        header: bool = False,
         opt_pref: bool = False,
         raise_invalid: bool = False,
     ) -> Position:
-        """Reads a .csv file containing candidates and preferences.
+        """Reads a CSV file containing candidates and preferences.
 
         Arguments:
-            filename: directory of .csv file to be read.
-            See df_to_position docstring for remaining arguments
+            filename: directory of CSV file to be read.
+            header: Whether the CSV file includes a header, which will be ignored.
 
-        Note that there are strong requirements on the format of the .csv file
-        to ensure correct behaviour:
-            -
+        The following arguments are passed directly to the Position constructor. See the
+        class documentation for more detail.
+            n_vac: The number of vacancies.
+            candidates: A list of candidate names.
+            opt_pref: Whether the vote is optional preferential.
+            raise_invalid: Whether to raise an exception on invalid votes.
+
         """
         # Create the position using the provided metadata
         pos = Position(
@@ -271,6 +296,9 @@ class Position:
         # Read the CSV file and load votes into the position
         with open(filename, "r") as read_obj:
             votes = list(csv.reader(read_obj))
+
+            if header:
+                votes = votes[1:]
 
             # TODO: mypy does not understand the above line
             pos.add_votes(votes)  # type: ignore

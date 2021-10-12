@@ -16,6 +16,9 @@ class TestSinglePositionFromCSV:
             filename="tests/data/single.csv",
             n_vac=1,
             candidates=["Platypus", "Wombat", "Koala"],
+            header=True,
+            # There should be no invalid votes in the CSV
+            raise_invalid=True,
         )
 
     def test_position_load(self, position):
