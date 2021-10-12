@@ -31,7 +31,7 @@ def test_distribute_and_remove(transfer_value, exp_count):
     p.add_votes(votes)
 
     updated_count = p._distribute_and_remove(
-        count, cand="A", transfer_value=transfer_value
+        count, cand="A", remaining=p.candidates, transfer_value=transfer_value
     )
 
     assert "A" not in updated_count.keys()

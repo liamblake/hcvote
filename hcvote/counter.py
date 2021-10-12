@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 from math import ceil
 from typing import Dict, List, Union
 
@@ -17,9 +18,6 @@ class Position:
                     If False, incomplete votes are treated as invalid.
         raise_invalid: option to raise an exception if an invalid vote is passed. If False, the invalid
                     vote is ignored.
-
-    For example, for a general committee of 10 members, with 15 people running for election;
-    >>> Position("General Committee Member", 10)
     """
 
     def __init__(
@@ -105,11 +103,11 @@ class Position:
     #
 
     def _invalid_vote(self, error_str: str):
-        """Only raise a ValueError is raise_invalid is specified."""
+        """Only raise a ValueError if raise_invalid is specified."""
         if self._raise_invalid:
-            raise ValueError(str)
+            raise ValueError(error_str)
 
-    def add_vote(self, prefs: Union[List[int], List[str]]):
+    def add_vote(self, prefs: List[Union[int, str]]):
         # TODO: Deal with optional preferential votes
 
         # Checking for invalid vote
@@ -139,7 +137,7 @@ class Position:
 
         self._votes.append(prefs)
 
-    def add_votes(self, votes: List[List[int]]):
+    def add_votes(self, votes: List[List[Union[str, int]]]):
         for prefs in votes:
             self.add_vote(prefs)
 
@@ -148,11 +146,20 @@ class Position:
     #
 
     def _distribute_and_remove(
-        self, count: Dict[str, int], cand: str, transfer_value: float
+        self,
+        count: Dict[str, float],
+        cand: str,
+        remaining: List[str],
+        transfer_value: float,
     ) -> Dict[str, int]:
         for v in self._votes:
             if v[0] == cand:
-                count[v[1]] += transfer_value
+                # The first candidate still remaining recieves the transferred vote.
+                for i in range(1, len(v)):
+                    next_cand = v[i]
+                    if next_cand in remaining:
+                        count[next_cand] += transfer_value
+                        break
 
         del count[cand]
         return count
@@ -170,7 +177,7 @@ class Position:
             self._counted = True
             return
 
-        remaining = self.candidates
+        remaining = self._candidates
 
         # Count the initial number of first preference votes
         first_prefs = {cand: 0 for cand in self._candidates}
@@ -184,6 +191,7 @@ class Position:
             elected_this_loop = False
 
             # Elect any candidates with more first preference votes than the quota
+            new_first_prefs = first_prefs
             for cand in remaining:
                 cand_first_prefs = first_prefs[cand]
                 if cand_first_prefs > self.quota:
@@ -198,28 +206,35 @@ class Position:
                     # preference, their first preference votes are distributed to the
                     # second preference, at a reduced value according to the transfer
                     # value.
-                    first_prefs = self._distribute_and_remove(
-                        count=first_prefs,
+                    new_first_prefs = self._distribute_and_remove(
+                        count=new_first_prefs,
                         cand=cand,
+                        remaining=remaining,
                         transfer_value=transfer_value,
                     )
+            first_prefs = new_first_prefs
 
             # Check if all positions have been filled
             if len(self._elected) == self._n_vac:
                 self._counted = True
                 return
+
             elif len(remaining) <= self._n_vac - len(self._elected):
                 # Fill the remaining positions
                 # TODO: This should not happen in practice
                 self._elected.extend(remaining)
                 self._counted = True
                 return
+
             elif not elected_this_loop:
                 # If no one was elected this loop, then exclude the candidate with the least votes
                 exclude_cand = min(first_prefs, key=first_prefs.get)
                 # Their votes are redistributed to second preferences
                 first_prefs = self._distribute_and_remove(
-                    count=first_prefs, cand=exclude_cand, transfer_value=1
+                    count=first_prefs,
+                    cand=exclude_cand,
+                    remaining=remaining,
+                    transfer_value=1,
                 )
                 remaining.remove(exclude_cand)
 
@@ -261,8 +276,8 @@ class Position:
     def from_csv(
         cls,
         filename: str,
-        name: str,
-        no_vac: int,
+        n_vac: int,
+        candidates: List[str],
         opt_pref: bool = False,
         raise_invalid: bool = False,
     ) -> Position:
@@ -276,6 +291,17 @@ class Position:
         to ensure correct behaviour:
             -
         """
+        # Create the position using the provided metadata
+        pos = Position(
+            n_vac=n_vac,
+            candidates=candidates,
+            opt_pref=opt_pref,
+            raise_invalid=raise_invalid,
+        )
 
-        votes = read_csv(filename)
-        return cls.from_df(votes, name, no_vac, opt_pref, raise_invalid)
+        # Read the CSV file and load votes into the position
+        with open(filename, "r") as read_obj:
+            votes = list(csv.reader(read_obj))
+            pos.add_votes(votes)
+
+        return pos
