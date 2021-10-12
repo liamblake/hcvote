@@ -29,11 +29,11 @@ class Position:
         self._raise_invalid = raise_invalid
         self._candidates = candidates
 
-        self._votes = []
+        self._votes: List[List[str]] = []
 
         self._n_vac = n_vac
 
-        self._elected = []
+        self._elected: List[str] = []
         self._counted = False
 
     #
@@ -133,7 +133,8 @@ class Position:
                 )
                 return
 
-        self._votes.append(prefs)
+        # TODO: The above logic is confusing mypy
+        self._votes.append(prefs)  # type: ignore
 
     def add_votes(self, votes: List[List[Union[str, int]]]):
         for prefs in votes:
@@ -149,7 +150,7 @@ class Position:
         cand: str,
         remaining: List[str],
         transfer_value: float,
-    ) -> Dict[str, int]:
+    ) -> Dict[str, float]:
         for v in self._votes:
             if v[0] == cand:
                 # The first candidate still remaining recieves the transferred vote.
@@ -270,6 +271,8 @@ class Position:
         # Read the CSV file and load votes into the position
         with open(filename, "r") as read_obj:
             votes = list(csv.reader(read_obj))
-            pos.add_votes(votes)
+
+            # TODO: mypy does not understand the above line
+            pos.add_votes(votes)  # type: ignore
 
         return pos

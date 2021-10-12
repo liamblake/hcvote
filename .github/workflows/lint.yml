@@ -32,3 +32,6 @@ jobs:
 
       - name: Check imports with isort
         run: isort hcvote --check-only
+
+      - name: Type check with mypy
+        run: mypy hcvote
