@@ -7,7 +7,7 @@ from hcvote import Position
 
 @pytest.fixture(scope="class")
 def position():
-    p = Position(3, ["Platypus", "Wombat", "Kangaroo", "Koala"])
+    p = Position(2, ["Platypus", "Wombat", "Emu", "Koala"])
     yield p
 
 
@@ -39,22 +39,20 @@ def test_distribute_and_remove(transfer_value, exp_count):
 
 
 class TestCounterSimple:
-    """Modified from the Wikipedia example:
-    https://en.wikipedia.org/wiki/Hare%E2%80%93Clark_electoral_system#Counting_method_with_example
-    """
+    """A simple example with four candidates and two vacancies"""
 
     @pytest.fixture(scope="class")
     def votes(self):
-        # 3500 votes are added, with 3000 valid
-        votes = (
-            # 1000 first preference votes for Platypus with Wombat as second
-            [["Platypus", "Wombat", "Kangaroo", "Koala"] for _ in range(1000)]
-            # 2000 first preference votes for Platypus without Wombat as second
-            + [["Platypus", "Kangaroo", "Wombat", "Koala"] for _ in range(2000)]
-            # 500 votes are otherwise invalid
-            + [["This is an invalid vote"] for _ in range(500)]
-        )
-
+        votes = [
+            ["Platypus", "Koala", "Wombat", "Emu"],
+            ["Platypus", "Koala", "Wombat", "Emu"],
+            ["Wombat", "Emu", "Koala", "Platypus"],
+            ["Koala", "Platypus", "Emu", "Wombat"],
+            ["Emu", "Wombat", "Platypus", "Koala"],
+            ["Emu", "Platypus", "Wombat", "Koala"],
+            ["Platypus", "Koala", "Emu", "Wombat"],
+            ["Emu", "Wombat", "Platypus", "Koala"],
+        ]
         yield votes
 
     @pytest.mark.order(1)
@@ -68,10 +66,27 @@ class TestCounterSimple:
         """
         position.add_votes(votes)
 
-        assert position.n_votes == 3000
-        assert position.quota == 751
+        assert position.votes == votes
+        assert position.quota == 4
 
     @pytest.mark.order(2)
+    def test_properties(self, position):
+        """
+        GIVEN: A position with some votes.
+        WHEN: Getting the various properties of the Position class.
+        THEN: Each property is returned correctly.
+        """
+        assert position.n_vac == 2
+        assert position.candidates == ["Platypus", "Wombat", "Emu", "Koala"]
+        assert position.n_votes == 8
+        assert position.n_candidates == 4
+        assert position.opt_pref == False
+        assert position.raise_invalid == False
+
+        with pytest.raises(AttributeError):
+            position.elected
+
+    @pytest.mark.order(3)
     def test_full_count(self, position):
         """
         GIVEN: A position and votes.
@@ -80,13 +95,11 @@ class TestCounterSimple:
             - The internal _counted flag is set to True.
             - The correct candidates are elected.
         """
-        position.count_vote()
+        # verbose is set to True for the sake of debugging
+        position.count_vote(verbose=True)
+        assert position.elected == ["Platypus", "Emu"]
 
-        assert position._counted
-        # TODO: Order should be correctly
-        assert set(position.elected) == set(["Platypus", "Wombat", "Kangaroo"])
-
-    @pytest.mark.order(3)
+    @pytest.mark.order(4)
     def test_count_again(self, position):
         """
         GIVEN: A position which has already been elected.
@@ -115,7 +128,7 @@ class TestSpecialCountCases:
         WHEN: Performing the vote count.
         THEN: All the candidates are elected.
         """
-        candidates = ["Koala", "Kangaroo"]
+        candidates = ["Koala", "Emu"]
         p = Position(n_vac=5, candidates=candidates, raise_invalid=True)
         p.add_votes([[1, 2], [2, 1]])
 
@@ -127,7 +140,12 @@ class TestSpecialCountCases:
 @pytest.mark.parametrize("raise_invalid", [False, True])
 @pytest.mark.parametrize(
     "vote",
-    [[1, 2], [1, 2, 3, 4, 5], ["Platypus", "Emu", "Koala", "Kangaroo"], [1, 2, 0.5, 3]],
+    [
+        [1, 2],
+        [1, 2, 3, 4, 5],
+        ["Platypus", "Possum", "Koala", "Wombat"],
+        [1, 2, 0.5, 3],
+    ],
 )
 def test_invalid_vote(position, raise_invalid, vote):
     """
@@ -143,7 +161,7 @@ def test_invalid_vote(position, raise_invalid, vote):
 
     # This allows us to only enter the pytest.raises(...) context if raise_invalid and
     # invalid is True. So we test that the exception is only raised when the raise_invalid
-    # flag is set to True on the Position and the vote is invalid.
+    # flag is set to True on the Position.
     # Described by this SE answer: https://stackoverflow.com/a/34798330
     # Yes, tests should be straightforward, but this is also pretty cool.
     with ExitStack() as stack:
