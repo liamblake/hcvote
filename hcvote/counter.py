@@ -63,7 +63,7 @@ class Position:
     @property
     def quota(self) -> float:
         """Calculate the quota of votes required for election"""
-        return ceil((len(self._votes) + 1) / (self._n_vac + 1))
+        return ceil(len(self._votes) / (self._n_vac + 1) + 1)
 
     @property
     def opt_pref(self) -> bool:
@@ -163,11 +163,19 @@ class Position:
         del count[cand]
         return count
 
-    def count_vote(self, exclude_cands: Optional[List[str]] = None):
-        """Perform the count, using all votes added to the class via the get_vote(s) methods.
+    def count_vote(
+        self, exclude_cands: Optional[List[str]] = None, verbose: bool = False
+    ):
+        """Perform the count, using all votes added to the class via the get_vote(s)
+        methods.
 
         Args:
-            exclude_cands: Any candidates to immediately remove from consideration. Their votes are redistributed prior to starting the counting loop. This is useful if counting for multiple positions with shared candidates, but each candidate can only be elected to one position.
+            exclude_cands: Any candidates to immediately remove from consideration. Their
+                votes are redistributed prior to starting the counting loop. This is useful
+                if counting for multiple positions with shared candidates, but each candidate
+                can only be elected to one position.
+            verbose: Whether to print results as the counting loop happens. Defaults to
+                false.
 
         Raises:
             RuntimeError: If this method has already been called before.
@@ -217,6 +225,11 @@ class Position:
                     remaining.remove(cand)
                     elected_this_loop = True
 
+                    if verbose:
+                        print(
+                            f"{cand} has more votes than the quota and was elected!\nThere are {self._n_vac - len(self._elected)} vacancies and {len(remaining)} candidates remaining."
+                        )
+
                     # Transfer the votes of the elected candidate
                     transfer_value = (cand_first_prefs - self.quota) / cand_first_prefs
 
@@ -239,7 +252,6 @@ class Position:
 
             elif len(remaining) <= self._n_vac - len(self._elected):
                 # Fill the remaining positions
-                # TODO: This should not happen in practice
                 self._elected.extend(remaining)
                 self._counted = True
                 return
@@ -256,6 +268,9 @@ class Position:
                     transfer_value=1,
                 )
                 remaining.remove(excluded)
+
+                if verbose:
+                    print(f"{excluded} had too few votes and was excluded.")
 
     #
     # Constructors from votes in other data formats.
