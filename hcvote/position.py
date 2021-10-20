@@ -25,14 +25,12 @@ class Position:
         opt_pref: bool = False,
         raise_invalid: bool = False,
     ):
+        self._n_vac = n_vac
+        self._candidates = candidates
         self._opt_pref = opt_pref
         self._raise_invalid = raise_invalid
-        self._candidates = candidates
 
         self._votes: List[List[str]] = []
-
-        self._n_vac = n_vac
-
         self._elected: List[str] = []
         self._counted = False
 
@@ -199,10 +197,13 @@ class Position:
 
         # Exclude any specified candidates and redistribute votes
         for cand in exclude_cands:
-            self._distribute_and_remove(
-                count=first_prefs, cand=cand, remaining=remaining, transfer_value=1
-            )
-            remaining.remove(cand)
+            # Ignore any names specified in exclude_cands who are not candidates for this
+            # position.
+            if cand in self._candidates:
+                self._distribute_and_remove(
+                    count=first_prefs, cand=cand, remaining=remaining, transfer_value=1
+                )
+                remaining.remove(cand)
 
         # If there are less candidates than positions, all are elected by default
         if len(remaining) < self.n_vac:

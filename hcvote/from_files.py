@@ -2,7 +2,7 @@
 import csv
 from typing import List, Tuple
 
-from .counter import Position
+from .position import Position
 
 
 # TODO: This use case is quite specific, so needs better documentation.
