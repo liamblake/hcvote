@@ -7,18 +7,27 @@
 The [Hare-Clark electoral system](https://en.wikipedia.org/wiki/Hare%E2%80%93Clark_electoral_system) is a preferential voting system used for elections in Tasmania and the Australian Capital Territory. This small Python package provides an implementation of this system, with the ability to load votes from a range of sources and formats.
 
 ## Table of Contents
+
 1. [The voting system](#the-voting-system)
 2. [Installation](#installation)
 3. [Usage](#usage)
-	1. [The `Position` class](#the-position-class)
-	2. [Vote validation](#vote-validation)
-	3. [Loading from other sources](#loading-from-other-sources)
+   1. [The `Position` class](#the-position-class)
+   2. [Vote validation](#vote-validation)
+   3. [Loading from other sources](#loading-from-other-sources)
 
 ## The voting system
 
+TODO
+
 ## Installation
 
-This package will be available on PyPI at some point in the future. For now, you can clone the repository and install with pip;
+This package is available on PyPI, and can be installed with pip;
+
+```shell
+pip install hcvote
+```
+
+Alternatively, you can clone the repository and install it directly with pip;
 
 ```shell
 git clone git@github.com:LiamBlake/hcvote.git

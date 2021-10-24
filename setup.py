@@ -1,8 +1,8 @@
 from setuptools import setup
 
 setup(
-    name="Hare-Clark Vote Counter",
-    url="https://github.com/LiamBlake/Hare-Clark-VoteCounter",
+    name="hcvote",
+    url="https://github.com/LiamBlake/hcvote",
     author="Liam Blake",
     author_email="",
     packages=["hcvote"],
@@ -13,6 +13,7 @@ setup(
     },
     version="0.1",
     license="GNU",
-    description="Implementation of Hare-Clark voting system.",
+    description="The Hare-Clark electoral counting system, implemented in Python.",
+    long_description_content_type="text/markdown",
     long_description=open("README.md").read(),
 )
