@@ -1,3 +1,4 @@
+[![PyPI](https://img.shields.io/pypi/v/hcvote)](https://pypi.org/project/hcvote)
 [![codecov](https://codecov.io/gh/liamblake/hcvote/branch/main/graph/badge.svg?token=AJ9GO0Q7DC)](https://codecov.io/gh/liamblake/hcvote)
 [![Unit tests](https://github.com/LiamBlake/Hare-Clark-VoteCounter/actions/workflows/test.yml/badge.svg)](https://github.com/LiamBlake/Hare-Clark-VoteCounter/actions/workflows/test.yml)
 [![Code style checks](https://github.com/LiamBlake/Hare-Clark-VoteCounter/actions/workflows/lint.yml/badge.svg)](https://github.com/LiamBlake/Hare-Clark-VoteCounter/actions/workflows/lint.yml)
