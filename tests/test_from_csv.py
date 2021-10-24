@@ -127,9 +127,14 @@ class TestMultipleFromCSV:
         self, csv_file, metadata, exclude_elected, expected_fixture, request
     ):
         """
-        GIVEN:
-        WHEN:
+        GIVEN: A CSV file containing votes for multiple, prespecified positions with
+            corresponding metadat.
+        WHEN: Loading the data with `multiple_from_csv`, with automatically counting and
+            potentially iteratively excluding elected candidates.
         THEN:
+            - The number of positions matches the expected number.
+            - Each position has been counted.
+            - The correct candidates are elected.
         """
         positions = multiple_from_csv(
             csv_file,
@@ -146,3 +151,28 @@ class TestMultipleFromCSV:
         for pos, exp in zip(positions, expected_elected):
             assert pos._counted
             assert pos.elected == exp
+
+
+def test_duplicate_ignore_cols():
+    """
+    GIVEN: A CSV with duplicates votes and columns to ignore.
+    WHEN: Reading the CSV to a position with `multiple_from_csv`, with a column to ignore
+        and an ID column.
+    THEN:
+        - The correct number of votes are added, disregarding the duplicate.
+        - The correct votes have been added in the correct order.
+    """
+    (position,) = multiple_from_csv(
+        "tests/data/duplicate_votes.csv",
+        metadata=[(2, ["Platypus", "Wombat"])],
+        ignore_cols=[3],
+        id_col=0,
+        raise_invalid=True,
+    )
+
+    assert position.n_votes == 3
+    assert position.votes == [
+        ["Wombat", "Platypus"],
+        ["Wombat", "Platypus"],
+        ["Platypus", "Wombat"],
+    ]

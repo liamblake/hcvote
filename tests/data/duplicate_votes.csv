@@ -1,0 +1,5 @@
+voter_id,A [1],A [2], A [3]
+1,Platypus,Wombat,This
+2,Wombat,Platypus,Column
+1,Wombat,Platypus,Is
+3,Platypus,Wombat,Ignored
