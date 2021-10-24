@@ -7,7 +7,7 @@ from hcvote import Position
 
 @pytest.fixture
 def position():
-    p = Position(2, ["Platypus", "Wombat", "Emu", "Koala"])
+    p = Position(2, ["Platypus", "Wombat", "Emu", "Koala"], name="President")
     yield p
 
 
@@ -83,6 +83,7 @@ class TestCounterSimple:
         assert position_with_votes.n_candidates == 4
         assert position_with_votes.opt_pref is False
         assert position_with_votes.raise_invalid is False
+        assert position_with_votes.name == "President"
 
         with pytest.raises(AttributeError):
             position.elected

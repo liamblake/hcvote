@@ -12,6 +12,8 @@ class Position:
     Args:
         no_vac: the number of vacancies for that position.
         candidates: a list of candidate names.
+        name: Optionally, a name to identify the position. This does not affect adding or
+            counting votes in any way.
         opt_pref: option for vote to be optional preferential. If True, incomplete votes are permitted.
                     If False, incomplete votes are treated as invalid.
         raise_invalid: option to raise an exception if an invalid vote is passed. If False, the invalid
@@ -22,6 +24,7 @@ class Position:
         self,
         n_vac: int,
         candidates: List[str],
+        name: str = "",
         opt_pref: bool = False,
         raise_invalid: bool = False,
     ):
@@ -29,6 +32,7 @@ class Position:
         self._candidates = candidates
         self._opt_pref = opt_pref
         self._raise_invalid = raise_invalid
+        self._name = name
 
         self._votes: List[List[str]] = []
         self._elected: List[str] = []
@@ -93,6 +97,10 @@ class Position:
             )
 
         return self._elected
+
+    @property
+    def name(self) -> str:
+        return self._name
 
     #
     # Methods for adding and validating votes
