@@ -87,17 +87,23 @@ class TestCounterSimple:
             position.elected
 
     @pytest.mark.order(3)
-    def test_full_count(self, position):
+    @pytest.mark.parametrize(
+        "exclude_cands,expected_elected",
+        [([], ["Platypus", "Emu"]), (["Platypus"], ["Koala", "Emu"])],
+    )
+    def test_full_count(self, position, exclude_cands, expected_elected):
         """
         GIVEN: A position and votes.
-        WHEN: Performing the vote count.
+        WHEN: Performing the vote count, possibly with candidates to exclude prior to
+            counting.
         THEN:
             - The internal _counted flag is set to True.
             - The correct candidates are elected.
         """
         # verbose is set to True for the sake of debugging
-        position.count_vote(verbose=True)
-        assert position.elected == ["Platypus", "Emu"]
+        position.count_vote(exclude_cands=exclude_cands, verbose=True)
+        assert position._counted
+        assert position.elected == expected_elected
 
     @pytest.mark.order(4)
     def test_count_again(self, position):

@@ -163,7 +163,7 @@ class Position:
 
     def count_vote(
         self, exclude_cands: Optional[List[str]] = None, verbose: bool = False
-    ):
+    ) -> List[str]:
         """Perform the count, using all votes added to the class via the get_vote(s)
         methods.
 
@@ -174,6 +174,9 @@ class Position:
                 can only be elected to one position.
             verbose: Whether to print results as the counting loop happens. Defaults to
                 false.
+
+        Returns:
+            A list of the elected candidates.
 
         Raises:
             RuntimeError: If this method has already been called before.
@@ -209,7 +212,7 @@ class Position:
         if len(remaining) < self.n_vac:
             self._elected = self._candidates
             self._counted = True
-            return
+            return self._elected
 
         # Iterate until all positions are filled
         # The break condition is manually checked after electing candidates
@@ -249,13 +252,13 @@ class Position:
             # Check if all positions have been filled
             if len(self._elected) == self._n_vac:
                 self._counted = True
-                return
+                break
 
             elif len(remaining) <= self._n_vac - len(self._elected):
                 # Fill the remaining positions
                 self._elected.extend(remaining)
                 self._counted = True
-                return
+                break
 
             elif not elected_this_loop:
                 # If no one was elected this loop, then exclude the candidate with the least votes
@@ -272,6 +275,8 @@ class Position:
 
                 if verbose:
                     print(f"{excluded} had too few votes and was excluded.")
+
+        return self._elected
 
     #
     # Constructors from votes in other data formats.
