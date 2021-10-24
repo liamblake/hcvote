@@ -107,14 +107,14 @@ class Position:
         # TODO: Deal with optional preferential votes
 
         # Checking for invalid vote
-        if len(prefs) != self.n_candidates:
+        if not self._opt_pref and len(prefs) != self.n_candidates:
             # Vote is invalid
             self._invalid_vote(
                 f"Preference array passed to add_vote is of invalid length: expected {self.n_candidates}, got {len(prefs)}."
             )
             return
 
-        # Check each vote individually
+        # Check each preference individually
         for i, val in enumerate(prefs):
             if isinstance(val, int):
                 val = prefs[i] = self._candidates[val - 1]

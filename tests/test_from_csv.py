@@ -76,11 +76,25 @@ class TestMultipleFromCSV:
 
     @pytest.fixture
     def expected_elected(self):
-        yield [["Wombat"], ["Platypus"]]
+        yield [
+            ["Wombat"],
+            ["Koala"],
+            ["Kangaroo"],
+            ["Kangaroo"],
+            ["Kangaroo"],
+            ["Cassowary"],
+        ]
 
     @pytest.fixture
     def expected_elected_exclude(self):
-        yield [["Wombat"], ["Koala"], ["Kangaroo"], [], [], [""]]
+        yield [
+            ["Wombat"],
+            ["Koala"],
+            ["Kangaroo"],
+            ["Platypus"],
+            ["Cassowary"],
+            ["Emu"],
+        ]
 
     def test_loading_no_count(self, csv_file, metadata):
         """
@@ -93,7 +107,12 @@ class TestMultipleFromCSV:
         """
 
         positions = multiple_from_csv(
-            csv_file, metadata, auto_count=False, exclude_elected=False, verbose=True
+            csv_file,
+            metadata,
+            auto_count=False,
+            exclude_elected=False,
+            verbose=True,
+            opt_pref=True,
         )
 
         assert len(positions) == len(metadata)
@@ -118,9 +137,12 @@ class TestMultipleFromCSV:
             auto_count=True,
             exclude_elected=exclude_elected,
             verbose=True,
+            opt_pref=True,
         )
 
+        expected_elected = request.getfixturevalue(expected_fixture)
+
         assert len(positions) == len(metadata)
-        for pos in positions:
+        for pos, exp in zip(positions, expected_elected):
             assert pos._counted
-            assert pos.elected == request.getfixturevalue(expected_fixture)
+            assert pos.elected == exp

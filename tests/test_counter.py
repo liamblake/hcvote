@@ -5,7 +5,7 @@ import pytest
 from hcvote import Position
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture
 def position():
     p = Position(2, ["Platypus", "Wombat", "Emu", "Koala"])
     yield p
@@ -39,9 +39,9 @@ def test_distribute_and_remove(transfer_value, exp_count):
 
 
 class TestCounterSimple:
-    """A simple example with four candidates and two vacancies"""
+    """A simple example with four candidates and two vacancies."""
 
-    @pytest.fixture(scope="class")
+    @pytest.fixture
     def votes(self):
         votes = [
             ["Platypus", "Koala", "Wombat", "Emu"],
@@ -55,8 +55,12 @@ class TestCounterSimple:
         ]
         yield votes
 
-    @pytest.mark.order(1)
-    def test_loading_votes(self, position, votes):
+    @pytest.fixture
+    def position_with_votes(self, position, votes):
+        position.add_votes(votes)
+        yield position
+
+    def test_loading_votes(self, votes, position_with_votes):
         """
         GIVEN: A position and votes.
         WHEN: Adding the votes to the position
@@ -64,34 +68,30 @@ class TestCounterSimple:
             - The votes are added correctly.
             - The quota is calculated correctly.
         """
-        position.add_votes(votes)
+        assert position_with_votes.votes == votes
+        assert position_with_votes.quota == 4
 
-        assert position.votes == votes
-        assert position.quota == 4
-
-    @pytest.mark.order(2)
-    def test_properties(self, position):
+    def test_properties(self, position_with_votes):
         """
         GIVEN: A position with some votes.
         WHEN: Getting the various properties of the Position class.
         THEN: Each property is returned correctly.
         """
-        assert position.n_vac == 2
-        assert position.candidates == ["Platypus", "Wombat", "Emu", "Koala"]
-        assert position.n_votes == 8
-        assert position.n_candidates == 4
-        assert position.opt_pref == False
-        assert position.raise_invalid == False
+        assert position_with_votes.n_vac == 2
+        assert position_with_votes.candidates == ["Platypus", "Wombat", "Emu", "Koala"]
+        assert position_with_votes.n_votes == 8
+        assert position_with_votes.n_candidates == 4
+        assert position_with_votes.opt_pref is False
+        assert position_with_votes.raise_invalid is False
 
         with pytest.raises(AttributeError):
             position.elected
 
-    @pytest.mark.order(3)
     @pytest.mark.parametrize(
         "exclude_cands,expected_elected",
-        [([], ["Platypus", "Emu"]), (["Platypus"], ["Koala", "Emu"])],
+        [([], ["Platypus", "Emu"]), (["Platypus"], ["Emu", "Koala"])],
     )
-    def test_full_count(self, position, exclude_cands, expected_elected):
+    def test_full_count(self, position_with_votes, exclude_cands, expected_elected):
         """
         GIVEN: A position and votes.
         WHEN: Performing the vote count, possibly with candidates to exclude prior to
@@ -101,19 +101,20 @@ class TestCounterSimple:
             - The correct candidates are elected.
         """
         # verbose is set to True for the sake of debugging
-        position.count_vote(exclude_cands=exclude_cands, verbose=True)
-        assert position._counted
-        assert position.elected == expected_elected
+        position_with_votes.count_vote(exclude_cands=exclude_cands, verbose=True)
+        assert position_with_votes._counted
+        assert position_with_votes.elected == expected_elected
 
     @pytest.mark.order(4)
-    def test_count_again(self, position):
+    def test_count_again(self, position_with_votes):
         """
         GIVEN: A position which has already been elected.
         WHEN: Attempting to perform the count again.
         THEN: A RuntimeError is raised.
         """
+        position_with_votes.count_vote()
         with pytest.raises(RuntimeError):
-            position.count_vote()
+            position_with_votes.count_vote()
 
 
 class TestSpecialCountCases:
