@@ -49,7 +49,7 @@ def multiple_from_csv(
         # Check that the CSV data is compatible with the metadata
         if len(raw[0]) != sum([len(item[1]) for item in metadata]):  # type: ignore
             raise ValueError(
-                "The total number of candidates across all positions does not match the number of rows in the CSV."
+                "The total number of candidates across all positions does not match the number of columns in the CSV."
             )
         # TODO: More checks here, to prevent harder-to-diagnose issues later on.
 
