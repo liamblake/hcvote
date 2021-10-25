@@ -8,7 +8,7 @@ from .position import Position
 # TODO: This use case is quite specific, so needs better documentation.
 def multiple_from_csv(
     filename: str,
-    metadata: List[Tuple[int, List[str]]],
+    metadata: List[Union[Tuple[int, List[str]], Tuple[int, List[str], str]]],
     auto_count: bool = False,
     exclude_elected: bool = False,
     ignore_cols: Optional[List[int]] = None,
@@ -75,7 +75,7 @@ def multiple_from_csv(
             pos = Position(
                 n_vac=pos_data[0],
                 candidates=pos_data[1],
-                name=pos_data[2] if len(pos_data) > 2 else "",
+                name=pos_data[2] if len(pos_data) > 2 else "",  # type: ignore
                 opt_pref=opt_pref,
                 **kwargs,
             )
