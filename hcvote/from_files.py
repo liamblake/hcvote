@@ -25,10 +25,11 @@ def multiple_from_csv(
 
     Args:
         filename: The name of the CSV file to load.
-        metadata: A list of 2-tuples corresponding to each position, containing
-            information which cannot be distinguished from the CSV file alone. The first
-            element of each tuple is the number of vacancies, and the second is a list of
-            candidate names.
+        metadata: A list of 2-tuples or 3-tuples corresponding to each position,
+            containing information which cannot be distinguished from the CSV file alone.
+            The first  by element of each tuple is the number of vacancies, and the
+            second is a list of candidate names. The third element is optional and
+            corresponds to a name for each Position.
         auto_count: Whether to count each position before returning.
         exclude_elected: If auto_count is True, exclude any previously elected candidates
             when counting each position.
@@ -72,7 +73,11 @@ def multiple_from_csv(
         print(rolling_idx)
         for pos_data in metadata:
             pos = Position(
-                n_vac=pos_data[0], candidates=pos_data[1], opt_pref=opt_pref, **kwargs
+                n_vac=pos_data[0],
+                candidates=pos_data[1],
+                name=pos_data[2] if len(pos_data) > 2 else "",
+                opt_pref=opt_pref,
+                **kwargs,
             )
             # For tracking duplicates, save each row alongside the ID column, if specified.
             row_by_id: Dict[Any, int] = {}
@@ -82,7 +87,9 @@ def multiple_from_csv(
                 # specifed columns as required.
                 vote = [
                     row[j]
-                    for j in range(rolling_idx, rolling_idx + pos.n_candidates)
+                    for j in range(
+                        rolling_idx, min(rolling_idx + pos.n_candidates, len(row))
+                    )
                     if j not in ignore_cols
                 ]
                 if opt_pref:
