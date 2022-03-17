@@ -8,7 +8,7 @@ setup(
     packages=["hcvote"],
     install_requires=[],
     extras_require={
-        "dev": ["black==21.11b1", "isort==5.10.1", "flake8==4.0.1", "mypy==0.910"],
+        "dev": ["black==21.11b1", "isort==5.10.1", "flake8==4.0.1", "mypy==0.941"],
         "test": ["pytest==7.0.1", "pytest-cov==3.0.0"],
     },
     version="0.2.0",
