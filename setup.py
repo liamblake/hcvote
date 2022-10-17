@@ -9,7 +9,7 @@ setup(
     install_requires=[],
     extras_require={
         "dev": ["black==22.3.0", "isort==5.10.1", "flake8==4.0.1", "mypy==0.910"],
-        "test": ["pytest==7.1.3", "pytest-cov==3.0.0"],
+        "test": ["pytest==7.1.3", "pytest-cov==4.0.0"],
     },
     version="0.2.0",
     license="GNU",
