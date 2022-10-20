@@ -70,7 +70,7 @@ def multiple_from_csv(
                 break
         else:
             raise ValueError("Unable to find a column which is not ignored.")
-        print(rolling_idx)
+
         for pos_data in metadata:
             pos = Position(
                 n_vac=pos_data[0],
@@ -125,8 +125,14 @@ def multiple_from_csv(
     all_elected: List[str] = []
     if auto_count:
         for pos in positions:
-            pos.count_vote(
-                exclude_cands=all_elected if exclude_elected else None, verbose=verbose
-            )
-            all_elected.extend(pos.elected)
+            try:
+                pos.count_vote(
+                    exclude_cands=all_elected if exclude_elected else None,
+                    verbose=verbose,
+                )
+                all_elected.extend(pos.elected)
+            except ValueError as e:
+                print(f"Failed to count vote for {pos.name}")
+                print(f"Error message: {e}")
+
     return positions
