@@ -102,6 +102,10 @@ class Position:
     def name(self) -> str:
         return self._name
 
+    @property
+    def counted(self) -> bool:
+        return self._counted
+
     #
     # Methods for adding and validating votes
     #
